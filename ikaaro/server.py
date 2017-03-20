@@ -342,7 +342,7 @@ class Server(WebServer):
             size_min = size_max = cache_size
         size_min, size_max = int(size_min), int(size_max)
         read_only = read_only or config.get_value('database-readonly')
-        database = get_database(target, size_min, size_max, read_only)
+        database = get_database(target, size_min, size_max, read_only, benchmark=benchmark)
         self.database = database
 
         # Find out the root class
