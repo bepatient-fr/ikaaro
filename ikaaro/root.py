@@ -22,6 +22,8 @@
 from decimal import Decimal
 from email.charset import add_charset, add_codec, QP
 from email.mime.application import MIMEApplication
+from time import time
+
 from email.MIMEText import MIMEText
 from email.MIMEImage import MIMEImage
 from email.MIMEMultipart import MIMEMultipart
@@ -235,6 +237,9 @@ class Root(Folder):
 
 
     def after_traverse(self, context):
+        if context.benchmark:
+            start_time = time()
+
         body = context.entity
         is_str = type(body) is str
         is_xml = is_xml_stream(body)
@@ -252,6 +257,13 @@ class Root(Folder):
             body = XMLParser(body, doctype=xhtml_doctype)
         context.entity = self.get_skin(context).template(body)
         context.content_type = 'text/html; charset=UTF-8'
+        if context.benchmark:
+            render_time = time() - start_time
+            context.benchmark_dict['render_time'] = render_time
+            print "TRAVERSE"
+            print id(context)
+            print context.benchmark_dict
+            print "END TRAVERSE"
 
 
     def get_available_languages(self):
