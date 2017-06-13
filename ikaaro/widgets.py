@@ -106,7 +106,7 @@ class FileWidget(Widget):
     <div stl:if="preview">
       <a href="${preview/link}" target="_blank">
         <div stl:if="preview/image">
-          <img src="${preview/image}"/>
+          <img src="${preview/image}" style="width: ${preview/width}px; height: ${preview/height}px;" />
         </div>
         ${download_file_title}
       </a>
@@ -143,7 +143,7 @@ class FileWidget(Widget):
             image = '{abspath}/;get_image?width={width}&height={height}&' + params
             image = image.format(**kw)
         # Ok
-        return {'link': link, 'image': image}
+        return {'link': link, 'image': image, 'width': self.width, 'height': self.height}
 
 
 

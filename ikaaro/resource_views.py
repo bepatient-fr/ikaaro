@@ -150,16 +150,18 @@ class DBResource_GetImage(DBResource_GetFile):
         height = context.query['height'] or image_height
 
         format = 'jpeg'
+        content_type = 'image/jpeg'
         if lossy is False:
-            format = handler.get_mimetype().split('/')[1]
-        data, format = handler.get_thumbnail(width, height, format, fit)
+            format = None
+            content_type = handler.get_mimetype()
+        data, _ = handler.get_thumbnail(width, height, format, fit)
         if data is None:
             default = context.get_template('/ui/ikaaro/icons/48x48/image.png')
             data = default.to_str()
-            format = 'png'
+            content_type = 'image/png'
 
         # Headers
-        context.set_content_type('image/%s' % format)
+        context.set_content_type(content_type)
 
         # Ok
         return data

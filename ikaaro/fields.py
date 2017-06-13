@@ -610,13 +610,17 @@ class File_Field(Field):
 
 
     def _get_handler_from_value(self, value):
+        mimetype = None
         if type(value) is tuple:
             filename, mimetype, value = value
 
         if type(value) is str:
             cls = self.class_handler
             if cls is None:
-                mimetype = magic_from_buffer(value)
+                if mimetype is None:
+                    mimetype = magic_from_buffer(value)
+                    if mimetype == 'image/svg':
+                        mimetype += '+xml'
                 cls = get_handler_class_by_mimetype(mimetype)
             return cls(string=value)
 
