@@ -5,3 +5,4 @@ guppy
 junitxml
 jwcrypto==0.7.0
 requests-toolbelt
+WebTest==2.0.35

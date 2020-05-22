@@ -21,8 +21,6 @@
 # Import from the Standard Library
 from cProfile import runctx
 from email.parser import HeaderParser
-from json import loads
-from io import BytesIO
 from datetime import timedelta
 from time import strftime
 import inspect
@@ -36,11 +34,8 @@ from time import time
 from traceback import format_exc
 from smtplib import SMTP, SMTPRecipientsRefused, SMTPResponseException
 from signal import SIGINT, SIGTERM
-from requests import Request
-from socket import gaierror
 from tempfile import mkstemp
 from importlib import import_module
-from wsgiref.util import setup_testing_defaults
 
 # Import from jwcrypto
 from jwcrypto.jwk import JWK
@@ -48,6 +43,9 @@ from jwcrypto.jwk import JWK
 # Import from gevent
 from gevent.pywsgi import WSGIServer, WSGIHandler
 from gevent.signal import signal as gevent_signal
+
+# Import from WebTest
+from webtest import TestApp
 
 # Import from itools
 from itools.core import become_daemon, vmsize
@@ -920,104 +918,55 @@ class Server(object):
         return self.config.get_value('cron-interval')
 
 
+    def do_request(
+            self,
+            method='GET',
+            path='/',
+            headers=None,
+            body='',
+            as_json=False,
+            user=None,
+            cookies=None):
 
-    def do_request(self, method='GET', path='/', headers=None, body='',
-            context=None, as_json=False, as_multipart=False, files=None, user=None, cookies=None):
-        """Experimental method to do a request on the server"""
-        from itools.web.router import RequestMethod
-        path_info = get_uri_path(path)
-        q_string = path.split('?')[-1]
-        # Build base environ
-        environ = {'PATH_INFO': path_info,
-                   'REQUEST_METHOD': method,
-                   'HTTP_X-Forwarded-Host': 'localhost/',
-                   'HTTP_X_FORWARDED_PROTO': 'http',
-                   'QUERY_STRING': q_string}
-        setup_testing_defaults(environ)
-        if files:
-            as_multipart = True
-        # Get request header / body
-        if as_json:
-            req = Request(
-                method,
-                'http://localhost:8080{0}'.format(path),
-                json=body,
-                headers=headers
-            )
-            prepped = req.prepare()
-        elif as_multipart:
-            req = Request(
-                method,
-                'http://localhost:8080{0}'.format(path),
-                data=body,
-                files=files,
-                headers=headers
-            )
-            prepped = req.prepare()
-        else:
-            req = Request(
-                method,
-                'http://localhost:8080{0}'.format(path),
-                data=body,
-                headers=headers
-            )
-            prepped = req.prepare()
+        # Wrap WSGI app with WebTest
+        wsgi_module = self.config.get_value("wsgi_application")
+        wsgi_module = import_module(wsgi_module)
+        application = getattr(wsgi_module, "application")
+        application = TestApp(application)
+
         # Build headers
-        headers = [(key.lower(), value) for key, value in prepped.headers.items()]
-        headers.append(('User-Agent', 'Firefox'))
-        for key, value in headers:
-            environ['HTTP_%s' % key.upper().replace('-', '_')] = value
-        # Set wsgi input body
-        environ['wsgi.input'] = BytesIO(prepped.body)
-        # Set content length
-        if prepped.body:
-            environ['CONTENT_LENGTH'] = len(prepped.body)
-        # Set accept
+        headers = headers or {}
         if as_json:
-            environ['CONTENT_TYPE'] = 'application/json'
-            environ['HTTP_ACCEPT'] = 'application/json'
-        elif as_multipart:
-            environ['CONTENT_TYPE'] = prepped.headers['Content-Type']
-        else:
-            environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
-        # Get context
-        context = get_context()
-        # Log user
-        user = context.user or user
-        if user:
-            context.login(user)
-            context.user = user
-        context.server = self
-        # Init context from environ
-        context.init_from_environ(environ, user)
-        # Cookies
-        if cookies:
-            for key, value in cookies.items():
-                context.set_cookie(key, value)
+            headers['ACCEPT'] = 'application/json'
+        # Setup cookies
+        cookies = cookies or {}
+        for key, value in cookies.items():
+            application.set_cookie(key, value)
+        kw = {
+            "expect_errors": True,
+            "headers": headers,
+            "params": body,
+        }
+        # Get HTTP METHOD
+        _method = getattr(application, method.lower())
         # Do request
-        RequestMethod.handle_request(context)
-        # Transform result
-        if context.entity is None:
-            response = None
-        elif as_json and not str(context.status).startswith('3'):
+        response = _method(path, **kw)
+        if as_json and not str(response.status_code).startswith('3'):
             # Do not load json if 302 (url redirection)
             try:
-                response = loads(context.entity)
+                body = response.json
             except ValueError:
-                msg = 'Cannot load json {0}'.format(context.entity)
+                msg = 'Cannot load json {0}'.format(response.body)
                 raise ValueError(msg)
         else:
-            response = context.entity
-        # Commit
-        if method == 'POST':
-            context.database.save_changes()
+            body = response.body
         # Return result
-        return {'status': context.status,
-                'method': context.method,
-                'entity': response,
-                'context': context}
-
-
+        return {
+            "status": response.status_code,
+            "method": method,
+            "entity": body,
+            "response": response
+        }
 
 
 class ServerConfig(ConfigFile):
