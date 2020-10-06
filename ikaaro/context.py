@@ -222,7 +222,7 @@ class CMSContext(prototype):
         handler = ro_database.get_handler(local_path, soft=True)
         if handler:
             if warning:
-                print warning
+                log_warning(warning, domain='ikaaro.web')
             return handler
 
         # 4. Not an exact match: trigger language negotiation
@@ -243,7 +243,7 @@ class CMSContext(prototype):
         language = accept.select_language(languages)
         # Print Warning
         if warning:
-            print warning
+            log_warning(warning, domain='ikaaro.web')
         # 4.2 By default use whatever variant
         # (XXX we need a way to define the default)
         if language is None:
@@ -770,7 +770,7 @@ class CMSContext(prototype):
         # Translate the source message
         if message:
             text = message.gettext(**kw)
-            if is_prototype(message, ERROR):
+            if isinstance(message, ERROR):
                 goto = goto.replace(error=text)
             else:
                 goto = goto.replace(info=text)

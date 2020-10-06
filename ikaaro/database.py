@@ -23,6 +23,7 @@ from gevent.lock import BoundedSemaphore
 # Import from itools
 from itools.database import RWDatabase, RODatabase as BaseRODatabase
 from itools.database import OrQuery, PhraseQuery, AndQuery
+from itools.log import log_warning
 from itools.uri import Path
 from itools.web import get_context, set_context
 
@@ -83,7 +84,7 @@ class ContextManager(object):
             else:
                 if self.context.database.has_changed:
                     msg = 'Warning: Some changes have not been commited'
-                    print(msg)
+                    log_warning(msg, domain="ikaaro.web")
         except Exception:
             set_context(None)
             DBSEM.release()

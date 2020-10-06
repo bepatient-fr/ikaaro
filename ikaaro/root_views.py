@@ -296,7 +296,6 @@ class UpdateDocs(AutoForm):
                 target = XHTMLFile()
                 elem = get_element(source.events, 'div', **{'class': 'body'})
                 if not elem:
-                    print 'E', path
                     return None
                 elements = elem.get_content_elements()
                 elements = rewrite_uris(elements, rewrite)
@@ -311,7 +310,6 @@ class UpdateDocs(AutoForm):
                 return body
             # Unknown
             else:
-                print 'X', path, mimetype
                 return body
 
         def postproc(file):

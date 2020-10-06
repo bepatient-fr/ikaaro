@@ -28,6 +28,7 @@ from itools.fs.common import get_mimetype
 from itools.core import merge_dicts, proto_property, proto_lazy_property
 from itools.datatypes import Boolean, Integer, String
 from itools.gettext import MSG
+from itools.log import log_error
 from itools.uri import Path
 from itools.stl import stl
 from itools.web import STLView, NotModified
@@ -629,10 +630,8 @@ class IkaaroStaticView(StaticView):
         except Exception:
             # Fallback if the handler cannot be loaded
             msg = 'WARNING: The file {0} contains errors'.format(context.path)
-            print('=='*10)
-            print(msg)
-            print(traceback.format_exc())
-            print('=='*10)
+            log_error(msg, domain="ikaaro.web")
+            log_error(traceback.format_exc(), domain="ikaaro.web")
             return self.get_fallback(resource, context)
 
 

@@ -174,7 +174,7 @@ log_levels = {
 
 def ask_confirmation(message, confirm=False):
     if confirm is True:
-        print message + 'Y'
+        print(message + 'Y')
         return True
 
     sys.stdout.write(message)
@@ -545,7 +545,7 @@ class Server(object):
         msg = 'reindex catalog %s %s %s' % (quiet, quick, as_test)
         log_info(msg)
         if self.is_running_in_rw_mode():
-            print 'Cannot proceed, the server is running in read-write mode.'
+            log_error('Cannot proceed, the server is running in read-write mode.', domain="ikaaro.web")
             return
         # Create a temporary new catalog
         catalog_path = '%s/catalog.new' % self.target
@@ -563,7 +563,8 @@ class Server(object):
         with self.database.init_context() as context:
             for obj in root.traverse_resources():
                 if not quiet or doc_n % 10000==0:
-                    print('{0} {1}'.format(doc_n, obj.abspath))
+                    log_info('{0} {1}'.format(doc_n, obj.abspath), domain="ikaaro.web")
+                    print()
                 doc_n += 1
                 context.resource = obj
                 values = obj.get_catalog_values()
@@ -591,9 +592,9 @@ class Server(object):
             # Update / Report
             t1, v1 = time(), vmsize()
             v = (v1 - v0)/1024
-            print '[Update] Time: %.02f seconds. Memory: %s Kb' % (t1 - t0, v)
+            log_info('[Update] Time: %.02f seconds. Memory: %s Kb' % (t1 - t0, v), domain="ikaaro.web")
             # Commit
-            print '[Commit]',
+            log_info('[Commit]', domain="ikaaro.web")
             sys.stdout.flush()
             catalog.save_changes()
             catalog.close()
@@ -605,12 +606,14 @@ class Server(object):
             # Commit / Report
             t2, v2 = time(), vmsize()
             v = (v2 - v1)/1024
-            print 'Time: %.02f seconds. Memory: %s Kb' % (t2 - t1, v)
+            log_info('Time: %.02f seconds. Memory: %s Kb' % (t2 - t1, v), domain="ikaaro.web")
             return True
         else:
-            print '[Update] Error(s) detected, the new catalog was NOT saved'
-            print ('[Update] You can find more infos in %r' %
-                   join(self.target, 'log/update-catalog'))
+            log_error('[Update] Error(s) detected, the new catalog was NOT saved', domain="ikaaro.web")
+            log_error(
+                '[Update] You can find more infos in %r' % join(self.target, 'log/update-catalog'),
+                domain="ikaaro.web"
+            )
             return False
 
 
@@ -640,7 +643,6 @@ class Server(object):
     def stop(self, force=False):
         msg = 'Stoping server...'
         log_info(msg)
-        print(msg)
         # Stop wsgi server
         if self.wsgi_server:
             self.wsgi_server.stop()

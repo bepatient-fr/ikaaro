@@ -37,7 +37,7 @@ from itools.database import RWDatabase, AndQuery, PhraseQuery
 from itools.gettext import MSG
 from itools.handlers import ConfigFile
 from itools.html import stream_to_str_as_html, xhtml_doctype
-from itools.log import log_warning
+from itools.log import log_warning, log_info
 from itools.stl import stl
 from itools.uri import Path
 from itools.web import BaseView, get_context
@@ -597,7 +597,7 @@ class Root(Folder):
                 continue
             if f.is_file(p) and not p.endswith('.metadata'):
                 new_path = p.replace(database_path, database_static_path)
-                print('Move {0} {1}'.format(p, new_path))
+                log_info('Move {0} {1}'.format(p, new_path), domain="ikaaro.web")
                 source = lfs._resolve_path(p)
                 target = lfs._resolve_path(new_path)
                 # Create folder

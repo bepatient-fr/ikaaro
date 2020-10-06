@@ -340,7 +340,7 @@ class DBResource(Resource):
                 # We're tying to debug this problem
                 msg = 'Warning: cannot get value from brain {0} {1}'
                 msg = msg.format(self.abspath, name)
-                print(msg)
+                log_warning(msg, domain="ikaaro.web")
                 value = field.get_value(self, name, language)
         else:
             value = field.get_value(self, name, language)

@@ -22,6 +22,7 @@ from traceback import print_exc
 # Import from itools
 from itools.database import AndQuery, PhraseQuery, RangeQuery
 from itools.gettext import MSG
+from itools.log import log_info
 from itools.web import STLView, ERROR
 
 
@@ -125,7 +126,7 @@ def run_next_update_method(context, force=False):
     # Commit message (Do not override the mtime/author)
     git_message = u'Upgrade {0} to version {1}'.format(
         version['class_id'], version['class_version'])
-    print(git_message)
+    log_info(git_message, domain="ikaaro.web")
     context.git_message = git_message
     context.set_mtime = False
     # Update
